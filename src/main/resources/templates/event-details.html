@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title th:text="${event.title ?: 'Event Details'}"></title>
+    <link rel="stylesheet" th:href="@{/style.css}" />
+    <style>
+        /* Body and HTML layout for sticky footer (if applicable, though not full page here) */
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .event-detail-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            flex: 1; /* Allow container to take up space in the flex column */
+        }
+
+        .event-detail-container h1 {
+            color: #007bff;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .info-block {
+            margin-bottom: 15px;
+        }
+
+        .info-block strong {
+            display: inline-block;
+            width: 120px; /* Aligns the data values */
+            font-weight: bold;
+        }
+
+        .description {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        /* --- START OF BUTTON STYLES --- */
+        .button-container {
+            margin-top: 30px;
+            text-align: left;
+            display: flex; /* Use flexbox to align buttons */
+            gap: 15px; /* Space between buttons */
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+        }
+
+        .back-button, .export-button {
+            display: inline-block;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-button {
+            background-color: #6c757d; /* Soft grey button background */
+            color: white;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .export-button {
+            background-color: #dc3545; /* Red for export/delete actions */
+            color: white;
+        }
+
+        .export-button:hover {
+            background-color: #c82333;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* --- END OF BUTTON STYLES --- */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            right: 0;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {background-color: #f1f1f1}
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .right-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<div class="event-detail-container">
+
+    <h1 th:text="${event.title}">[Event Title]</h1>
+
+    <div class="info-block">
+        <strong>Event ID:</strong>
+        <span th:text="${event.event_id}">[Event ID]</span>
+    </div>
+
+    <div class="info-block">
+        <strong>Date:</strong>
+        <span th:text="${event.date != null ? #temporals.format(event.date, 'EEEE, dd MMMM yyyy') : 'Date TBD'}">[Event Date]</span>
+    </div>
+<div class="info-block">
+    <strong>Time:</strong>
+    <span th:if="${event.start_time != null}">
+        
+        <th:block th:if="${event.start_time instanceof T(java.time.LocalDateTime)}">
+            <span th:text="${#temporals.format(event.start_time, 'HH:mm')}"></span>
+        </th:block>
+        <th:block th:unless="${event.start_time instanceof T(java.time.LocalDateTime)}">
+            <span th:text="${#strings.contains(event.start_time, ' ') 
+                ? #strings.substring(#strings.substringAfter(event.start_time, ' '), 0, 5) 
+                : #strings.substring(event.start_time, 0, 5)}"></span>
+        </th:block>
+        
+        <span th:if="${event.finish_time != null and event.finish_time != ''}">
+            -
+            <th:block th:if="${event.finish_time instanceof T(java.time.LocalDateTime)}">
+                <span th:text="${#temporals.format(event.finish_time, 'HH:mm')}"></span>
+            </th:block>
+            <th:block th:unless="${event.finish_time instanceof T(java.time.LocalDateTime)}">
+                <span th:text="${#strings.contains(event.finish_time, ' ') 
+                    ? #strings.substring(#strings.substringAfter(event.finish_time, ' '), 0, 5) 
+                    : #strings.substring(event.finish_time, 0, 5)}"></span>
+            </th:block>
+        </span>
+    </span>
+    <span th:unless="${event.start_time != null}">
+        Time TBD
+    </span>
+</div>
+    <div class="info-block">
+        <strong>Location:</strong>
+        <span th:text="${event.location ?: 'Virtual/TBD'}">[Event Location]</span>
+    </div>
+
+    <div class="info-block">
+        <strong>Club ID:</strong>
+        <span th:text="${event.club_id ?: 'None'}">[Club ID]</span>
+    </div>
+
+   <div class="description">
+        <h3>Description</h3>
+        <p th:text="${event.description ?: 'No description provided.'}">[Event Description]</p>
+    </div>
+
+    <div class="info-block" th:if="${not #lists.isEmpty(eventTags)}">
+        <strong>Tags:</strong>
+        <span th:each="tag : ${eventTags}" class="tag-badge" th:text="${tag.tag_name()}"></span>
+    </div>
+
+    <div id="map" style="width: 100%; height: 300px; margin-top: 20px; border-radius: 8px; border: 1px solid #ddd;"></div>
+
+    <div class="button-container">
+        <a href="javascript:history.back()" class="back-button">← Back</a>
+
+        <a th:if="${isOrganiser or session.role == 'ADMIN'}"
+           th:href="@{/organiser/events/{eventId}/export/rsvp(eventId=${event.event_id})}"
+           class="export-button">
+            ⬇️ Export RSVP List (.csv)
+        </a>
+
+    </div>
+
+</div>
+<script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${GOOGLE_API_KEY} + '&callback=initMap'" async defer></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const eventLocation = /*[[${event.location}]]*/ 'RMIT University';
+    /*]]>*/
+
+    function initMap() {
+        if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+            return;
+        }
+        const geocoder = new google.maps.Geocoder();
+        const mapDiv = document.getElementById('map');
+        geocoder.geocode({ 'address': eventLocation }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+                const map = new google.maps.Map(mapDiv, {
+                    center: results[0].geometry.location,
+                    zoom: 15,
+                });
+                new google.maps.Marker({
+                    map: map,
+                    position: results[0].geometry.location,
+                });
+            } else {
+                mapDiv.innerHTML = '<p style="text-align:center; line-height:300px;">Map not available.</p>';
+            }
+        });
+    }
+</script>
+<div th:replace="~{fragments/notification :: notification-script}"></div>
+</body>
+</html>

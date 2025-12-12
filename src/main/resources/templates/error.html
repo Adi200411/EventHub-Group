@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>Error - EventHub</title>
+        <link rel="stylesheet" th:href="@{/style.css}">
+    </head>
+    <body>
+        <div th:replace="~{fragments/header :: header}"></div>
+
+        <!-- ERROR SECTION -->
+        <div class="error-container">
+            <h1>Oops! Something went wrong</h1>
+            <div class="error-message">
+                <p th:text="${error}">An unexpected error occurred</p>
+            </div>
+            <div class="error-actions">
+                <a href="/" class="btn">Go Home</a>
+                <a href="/events" class="btn">View Events</a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EventHub</h3>
+                    <p>Connecting students with amazing events and opportunities.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 EventHub. All rights reserved.</p>
+            </div>
+        </footer>
+    </body>
+</html>

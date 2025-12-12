@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>User Details | Admin</title>
+  <link rel="stylesheet" th:href="@{/style.css}" />
+  <style>
+    .status-badge {
+      display: inline-block;
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+    .status-active { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-deactivated { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .status-banned { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+  </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<!-- ✅ User Detail -->
+<section class="about">
+  <div class="container">
+    <h1>User Details</h1>
+    <p>View and manage an individual user’s account information.</p>
+  </div>
+</section>
+
+<section class="events">
+  <div class="container">
+    <div class="event-card-browse">
+      <h2 th:text="${user.email}">user@example.com</h2>
+      <p><strong>User ID:</strong> <span th:text="${user.user_id()}">1</span></p>
+      <p><strong>Created:</strong>
+        <span th:text="${#temporals.format(user.created_at(), 'dd MMM yyyy HH:mm')}">2025-01-01</span>
+      </p>
+      <p><strong>Status:</strong>
+        <span th:switch="${user.status}">
+          <span th:case="'ACTIVE'" class="status-badge status-active">Active</span>
+          <span th:case="'DEACTIVATED'" class="status-badge status-deactivated">Deactivated</span>
+          <span th:case="'BANNED'" class="status-badge status-banned">Banned</span>
+          <span th:case="*" style="color:#6c757d;">Unknown</span>
+        </span>
+      </p>
+
+      <div class="back-links" style="margin-top:1rem;">
+        <!-- Conditional buttons -->
+        <form th:if="${user.status == 'ACTIVE'}"
+              th:action="@{'/admin/users/' + ${user.user_id()} + '/deactivate'}"
+              method="post" style="display:inline;">
+          <button type="submit" class="back-btn secondary">Deactivate</button>
+        </form>
+
+        <form th:if="${user.status == 'DEACTIVATED'}"
+              th:action="@{'/admin/users/' + ${user.user_id()} + '/reactivate'}"
+              method="post" style="display:inline;">
+          <button type="submit" class="back-btn" style="background:#28a745;">Reactivate</button>
+        </form>
+
+        <form th:if="${user.status != 'BANNED'}"
+              th:action="@{'/admin/users/' + ${user.user_id()} + '/ban'}"
+              method="post" style="display:inline;">
+          <button type="submit" class="back-btn" style="background:#dc3545;">Ban</button>
+        </form>
+
+        <a th:href="@{/admin/users}" class="back-btn secondary">Back</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ✅ Footer -->
+<footer>
+  <div class="footer-bottom">
+    <p>© 2025 EventHub Admin Console</p>
+  </div>
+</footer>
+
+</body>
+</html>

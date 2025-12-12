@@ -1,0 +1,33 @@
+# Test environment Dockerfile
+# This image includes all tools needed for testing both locally and in CI
+FROM openjdk:17-jdk-slim
+
+# Install necessary tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    netcat-openbsd \
+    default-mysql-client \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Maven
+ENV MAVEN_VERSION=3.9.4
+ENV MAVEN_HOME=/opt/maven
+RUN wget -q https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+    && tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt \
+    && mv /opt/apache-maven-${MAVEN_VERSION} ${MAVEN_HOME} \
+    && rm apache-maven-${MAVEN_VERSION}-bin.tar.gz
+ENV PATH=${MAVEN_HOME}/bin:${PATH}
+
+# Set working directory
+WORKDIR /app
+
+# Copy project files
+COPY . .
+
+# Make mvnw executable (if it exists)
+RUN if [ -f "./mvnw" ]; then chmod +x ./mvnw; fi
+
+# Default command
+CMD ["bash"]

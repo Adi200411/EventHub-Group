@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Edit Profile — EventHub</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+        <style>
+            /* Style for save confirmation*/
+            .confirmation {
+                display: none; /* hidden by default */
+                position: fixed;
+                z-index: 1000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0,0,0,0.4);
+            }
+            .confirmation-content {
+                background-color: #fefefe;
+                margin: 15% auto;
+                padding: 20px;
+                border: 1px solid #888;
+                width: 90%;
+                max-width: 420px;
+                text-align: center;
+                border-radius: 6px;
+            }
+            .confirmation .btn {
+                margin-top: 1rem;
+            }
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                background-color: #f9f9f9;
+                min-width: 160px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1;
+                right: 0;
+            }
+
+            .dropdown-content a {
+                color: black;
+                padding: 12px 16px;
+                text-decoration: none;
+                display: block;
+            }
+
+            .dropdown-content a:hover {background-color: #f1f1f1}
+
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+            .right-nav {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+        </style>
+  </head>
+
+    <body>
+    <!-- NAV BAR -->
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <!-- Edit Profile Fields -->
+    <div class="about">
+        <h1>Edit Profile</h1>
+        <form class="card" th:action="@{/users/update}" method="post" autocomplete="on">
+            <!-- include hidden id so controller knows which user -->
+            <input type="hidden" name="id" th:value="${user.user_id}" />
+
+            <h3>Change Details</h3>
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" th:value="${name ?: ''}" th:placeholder="${profile.name()}"/>
+
+            <label for="course">Course</label>
+            <input id="course" name="course" type="text" th:value="${course ?: ''}" th:placeholder="${profile.course}"/>
+
+            <label for="interest">Interest</label>
+            <input id="interest" name="interest" type="text" th:value="${interest ?: ''}" th:placeholder="${profile.interest}"/>
+            <!-- Organiser-specific fields: Role Title and Club -->
+            <div th:if="${session.is_organiser}" style="margin-top: .75rem;">
+                <h3>Organiser details</h3>
+                <label for="roleTitle">Role Title</label>
+                <input id="roleTitle" name="roleTitle" type="text"
+                       th:value="${roleTitle ?: ''}"
+                       th:placeholder="${session.organiser != null} ? ${session.organiser.role_title} : ''" />
+
+                <label for="club">Club</label>
+                <select id="club" name="clubId">
+                    <option value="" disabled th:if="${session.organiser == null}" selected>— Select club —</option>
+                    <option th:each="club : ${clubs}"
+                            th:value="${club.club_id()}"
+                            th:text="${club.name()}"
+                            th:selected="${session.organiser != null} ? ${club.club_id()} == ${session.organiser.club_id} : false">
+                    </option>
+                </select>
+            </div>
+            <h3>Change Password</h3>
+            <label for="currentPassword">Current Password</label>
+            <input id="currentPassword" name="currentPassword" type="password" placeholder="Current password" />
+
+            <label for="newPassword">New Password</label>
+            <input id="newPassword" name="newPassword" type="password" placeholder="New password" />
+
+            <label for="confirmPassword">Confirm New Password</label>
+            <input id="confirmPassword" name="confirmPassword" type="password" placeholder="Confirm new password" />
+
+        <div style="margin-top: 1rem;">
+            <button type="submit" class="login">Save changes</button>
+        </div>
+      </form>
+
+      <p>
+        <a href="landing.html" th:href="@{/}">← Return to landing page</a>
+      </p>
+    </div>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EventHub</h3>
+                    <p>Connecting students with amazing events and opportunities.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/#about">About</a></li>
+                        <li><a href="/browse">Browse Events</a></li>
+                        <li><a href="/recommendation">Recommendations</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>Email: example@example.com</li>
+                        <li>Phone: 123 456 789</li>
+                        <li>Location: RMIT University</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 EventHub. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- Save Confirmation -->
+        <div id="saveConfirmation" class="confirmation" role="dialog" aria-modal="true" aria-labelledby="saveConfirmationTitle">
+            <div class="confirmation-content">
+                <h2 id="saveConfirmationTitle">Profile Changes Saved</h2>
+                <p>Your profile changes have been successfully saved.</p>
+                <div>
+                    <button id="saveConfirmationOk" class="login btn">OK</button>
+                </div>
+            </div>
+        </div>
+        <script>
+            (function(){
+                // Find the form on the page
+                const form = document.querySelector('form.card');
+                const confirmation = document.getElementById('saveConfirmation');
+                const okBtn = document.getElementById('saveConfirmationOk');
+
+                if (!form) {
+                    console.warn('Edit profile script: form.card not found.');
+                    return;
+                }
+
+                function showConfirmation() {
+                    if (!confirmation) return;
+                    confirmation.style.display = 'block';
+                    confirmation.setAttribute('aria-hidden', 'false');
+                    if (okBtn) okBtn.focus();
+                }
+
+                // Handle form submission
+                form.addEventListener('submit', function(e){
+                    e.preventDefault();
+
+                    const action = form.action || form.getAttribute('action') || '/users/update';
+                    const method = (form.method || 'post').toUpperCase();
+                    const formData = new URLSearchParams(new FormData(form));
+
+                    // Send the form using fetch to show the confirmation without a full page reload
+                    fetch(action, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                        },
+                        body: formData.toString(),
+                        credentials: 'same-origin'
+                    }).then(function(response){
+                if (response.ok) {
+                    showConfirmation();
+                        } else {
+                            console.warn('Save returned non-ok status', response.status);
+                            return response.text().then(function(text){
+                                alert('Failed to save changes. Server responded with status ' + response.status + '.');
+                            });
+                        }
+                    }).catch(function(err){
+                        console.error('Save error', err);
+                        alert('An error occurred while saving changes. Please try again.');
+                    });
+                });
+
+                if (okBtn) {
+                    okBtn.addEventListener('click', function(){
+                        window.location.href = '/';
+                    });
+                }
+            })();
+        </script>
+    <div th:replace="~{fragments/notification :: notification-script}"></div>
+    </body>
+</html>

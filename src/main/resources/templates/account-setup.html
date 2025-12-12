@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Account Setup — EventHub</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <style>
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            right: 0;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {background-color: #f1f1f1}
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .right-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+  </head>
+
+    <body>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <!-- Account Setup Fields -->
+    <div class="about">
+        <h1>Account Setup</h1>
+        <form class="card" th:action="@{/users/register}" method="post" autocomplete="on">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" placeholder="Your name" required />
+
+            <label for="course">Course</label>
+            <input id="course" name="course" type="text" placeholder="e.g., Bachelor of IT" required/>
+
+            <label for="interest">Interest</label>
+            <input id="interest" name="interest" type="text" placeholder="e.g., Hackathons, AI" required/>
+
+
+            <label for="role">Please select your role</label>
+            <select id="role" name="role" required>
+                <option value="" disabled selected>— Select —</option>
+                <option value="student">Student</option>
+                <option value="organiser">Organiser</option>
+            </select>
+
+
+        <div id="organiserFields" style="display:none; margin-top: 0.5rem;">
+            <label for="roleTitle">Role title</label>
+            <input id="roleTitle" name="roleTitle" type="text" placeholder="e.g., Club President" />
+            <label for="club">Club</label>
+            <select id="club" name="clubId">
+                <option value="" disabled selected>— Select club —</option>
+                <option th:each="club : ${clubs}"
+                        th:value="${club.club_id()}"
+                        th:text="${club.name()}">
+                </option>
+            </select>
+
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button type="submit" class="login">Submit</button>
+        </div>
+      </form>
+
+      <p>
+        <a href="landing.html" th:href="@{/}">← Return to landing page</a>
+      </p>
+    </div>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EventHub</h3>
+                    <p>Connecting students with amazing events and opportunities.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/#about">About</a></li>
+                        <li><a href="/browse">Browse Events</a></li>
+                        <li><a href="/recommendation">Recommendations</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>Email: example@example.com</li>
+                        <li>Phone: 123 456 789</li>
+                        <li>Location: RMIT University</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 EventHub. All rights reserved.</p>
+            </div>
+        </footer>
+    </body>
+</html>

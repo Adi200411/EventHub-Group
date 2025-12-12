@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>EventHub</title>
+        <link rel="stylesheet" th:href="@{/style.css}">
+        <style>
+            /* Body and HTML layout for sticky footer */
+            html, body {
+                height: 100%;
+            }
+            
+            body {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .main-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                background-color: #f9f9f9;
+                min-width: 160px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1;
+                right: 0;
+            }
+
+            .dropdown-content a {
+                color: black;
+                padding: 12px 16px;
+                text-decoration: none;
+                display: block;
+            }
+
+            .dropdown-content a:hover {background-color: #f1f1f1}
+
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+            .right-nav {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+        </style>
+    </head>
+
+    <body>
+        
+        <!-- NAV BAR -->
+        <div th:replace="~{fragments/header :: header}"></div>
+
+        <div class="main-content">
+            <div th:if="${successMessage}" style="margin:12px 0;padding:10px;border-radius:8px;background:#e8f5e9;border:1px solid #a5d6a7;">
+                <span th:text="${successMessage}"></span>
+            </div>
+        <!-- ABOUT SECTION -->
+        <div id="about" class="about">
+            <div class="container">
+                <h1>About EventHub</h1>
+                <div class="cards">
+                    <div class="card">
+                        <h2>For Students</h2>
+                        <p>EventHub makes it easy to discover what's happening around campus. Whether it's a tech talk, a social club gathering, or a career fair, you can explore upcoming events in one place. RSVP online, get reminders, and never miss an opportunity to connect, learn and have fun.</p>
+                    </div>
+                    <div class="card">
+                        <h2>For Clubs / Organisations</h2>
+                        <p>EventHub gives clubs and student organisations the tools to share and manage events with ease. Create and publish events in minutes, track RSVPs, and gather feedback from attendees. With EventHub, reaching students and building engagement across campus has never been simpler.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Events Section -->
+        <div id="events" class="events">
+            <div class="container">
+                <h1>Upcoming Events</h1>
+                <div class="scroll-carousel-container">
+                    <div class="scroll-carousel">
+                        <!-- Dynamic slides based on number of events -->
+                        <div th:each="event : ${upcomingEvents}" class="scroll-slide">
+                            <div class="event-card">
+                                <h3 th:text="${event.title}"></h3>
+                                <p><strong>Date:</strong> <span th:text="${event.date}"></span></p>
+                                <p><strong>Location:</strong> <span th:text="${event.location}"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Scroll indicator -->
+                    <div class="scroll-indicator" th:if="${#lists.size(events) > 1}">
+                        <span>← Scroll to explore more events →</span>
+                    </div>
+                </div>
+            </div>
+        </div>   
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EventHub</h3>
+                    <p>Connecting students with amazing events and opportunities.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/#about">About</a></li>
+                        <li><a href="/browse">Browse Events</a></li>
+                        <li><a href="/recommendation">Recommendations</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>Email: example@example.com</li>
+                        <li>Phone: 123 456 789</li>
+                        <li>Location: RMIT University</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 EventHub. All rights reserved.</p>
+            </div>
+        </footer>
+        
+        <!-- Notification Script -->
+        <div th:replace="~{fragments/notification :: notification-script}"></div>
+    </body>
+</html>

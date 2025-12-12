@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>Feedback Form - EventHub</title>
+        <link rel="stylesheet" th:href="@{/style.css}">
+        <style>
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+    
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                background-color: #f9f9f9;
+                min-width: 160px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1;
+                right: 0;
+            }
+    
+            .dropdown-content a {
+                color: black;
+                padding: 12px 16px;
+                text-decoration: none;
+                display: block;
+            }
+    
+            .dropdown-content a:hover {background-color: #f1f1f1}
+    
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+            .right-nav {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+        </style>
+    </head>
+    
+    <body>
+        <div th:replace="~{fragments/header :: header}"></div>
+
+        <div class="feedback-container">
+            <div class="feedback-header">
+                <h1>Feedback Form</h1>
+                <div class="event-info">
+                    <h2 th:text="${event.title}">Event Title</h2>
+                    <p><strong>Date:</strong> <span th:text="${event.date}">Event Date</span></p>
+                    <p><strong>Location:</strong> <span th:text="${event.location}">Event Location</span></p>
+                </div>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${successMessage}" class="message success-message">
+                <span th:text="${successMessage}"></span>
+            </div>
+            <div th:if="${errorMessage}" class="message error-message">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <!-- Feedback Form -->
+            <div class="feedback-form-wrapper">
+                <form th:action="@{/feedback/submit}" method="post" class="feedback-form">
+                    <input type="hidden" name="eventId" th:value="${event.event_id}" />
+                    <div th:if="${_csrf}">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    </div>
+
+                    <!-- Rating Section -->
+                    <div class="rating-section">
+                        <h3>How would you like to rate this event?</h3>
+                        <div class="star-rating">
+                            <input type="radio" id="star5" name="rating" value="5" th:checked="${existingFeedback != null && existingFeedback.rating == 5}" />
+                            <label for="star5" class="star">★</label>
+                            <input type="radio" id="star4" name="rating" value="4" th:checked="${existingFeedback != null && existingFeedback.rating == 4}" />
+                            <label for="star4" class="star">★</label>
+                            <input type="radio" id="star3" name="rating" value="3" th:checked="${existingFeedback != null && existingFeedback.rating == 3}" />
+                            <label for="star3" class="star">★</label>
+                            <input type="radio" id="star2" name="rating" value="2" th:checked="${existingFeedback != null && existingFeedback.rating == 2}" />
+                            <label for="star2" class="star">★</label>
+                            <input type="radio" id="star1" name="rating" value="1" th:checked="${existingFeedback != null && existingFeedback.rating == 1}" />
+                            <label for="star1" class="star">★</label>
+                        </div>
+                        <div class="rating-text">
+                            <span th:if="${existingFeedback != null}">
+                                Previously rated: 
+                                <span th:if="${existingFeedback.rating == 1}">★ Poor</span>
+                                <span th:if="${existingFeedback.rating == 2}">★★ Fair</span>
+                                <span th:if="${existingFeedback.rating == 3}">★★★ Good</span>
+                                <span th:if="${existingFeedback.rating == 4}">★★★★ Very Good</span>
+                                <span th:if="${existingFeedback.rating == 5}">★★★★★ Excellent</span>
+                            </span>
+                            <span th:if="${existingFeedback == null}">Select your rating above</span>
+                        </div>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="comments-section">
+                        <h3>Add Comments</h3>
+                        <textarea 
+                            name="comments" 
+                            placeholder="Share your thoughts about this event..." 
+                            rows="6" 
+                            maxlength="500"
+                            th:text="${existingFeedback != null ? existingFeedback.comments : ''}"></textarea>
+                        <div class="character-limit-notice">
+                            <small>Maximum 500 characters</small>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="submit-section">
+                        <button type="submit" class="submit-btn" th:text="${hasExistingFeedback ? 'Update Feedback' : 'Submit Feedback'}">
+                            Submit Feedback
+                        </button>
+                        <div style="margin-top: 1.5rem; text-align: center;">
+                            <a th:href="@{'/feedback/event/' + ${event.event_id} + '/all'}" 
+                               class="back-btn" style="margin-right: 1rem;">
+                                View All Feedback
+                            </a>
+                            <a href="/my-bookings" 
+                               class="back-btn secondary">
+                                Back to My Bookings
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Existing Feedback Display -->
+                    <div th:if="${hasExistingFeedback}" class="existing-feedback-notice">
+                        <p><strong>Note:</strong> You have already provided feedback for this event. Submitting this form will update your previous feedback.</p>
+                        <div class="previous-feedback">
+                            <p><strong>Previous Rating:</strong> 
+                                <span class="rating-display">
+                                    <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                        th:class="${i <= existingFeedback.rating} ? 'star filled' : 'star'"
+                                        th:text="'★'"></span>
+                                </span>
+                            </p>
+                            <p><strong>Previous Comments:</strong></p>
+                            <div class="previous-comments" th:text="${existingFeedback.comments ?: 'No comments provided'}"></div>
+                            <p class="feedback-date"><small>Submitted on: <span th:text="${#temporals.format(existingFeedback.feedback_date, 'dd/MM/yyyy HH:mm')}"></span></small></p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EventHub</h3>
+                    <p>Connecting students with amazing events and opportunities.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/#about">About</a></li>
+                        <li><a href="/browse">Browse Events</a></li>
+                        <li><a href="/recommendation">Recommendations</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>Email: example@example.com</li>
+                        <li>Phone: 123 456 789</li>
+                        <li>Location: RMIT University</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 EventHub. All rights reserved.</p>
+            </div>
+        </footer>
+    </body>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title th:text="${selectedEvent != null ? selectedEvent.title + ' - Photo Gallery' : 'Photo Gallery'} + ' - EventHub'">Photo Gallery - EventHub</title>
+        <link rel="stylesheet" th:href="@{/style.css}">
+        <link rel="stylesheet" th:href="@{/gallery.css}">
+        <style>
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+    
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                background-color: #f9f9f9;
+                min-width: 160px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1;
+                right: 0;
+            }
+    
+            .dropdown-content a {
+                color: black;
+                padding: 12px 16px;
+                text-decoration: none;
+                display: block;
+            }
+    
+            .dropdown-content a:hover {background-color: #f1f1f1}
+    
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+            .right-nav {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div th:replace="~{fragments/header :: header}"></div>
+        
+        <div class="main-content">
+            <div class="gallery-container">
+                <div class="gallery-header">
+                    <div>
+                        <div class="gallery-back-link">
+                            <a href="/my-bookings">&larr; Back to My Bookings</a>
+                        </div>
+                        <h1 th:text="${selectedEvent != null ? selectedEvent.title + ' - Photo Gallery' : 'Photo Gallery'}">Photo Gallery</h1>
+                        <div th:if="${selectedEvent}" class="gallery-event-info">
+                            <span th:text="${selectedEvent.date}"></span> at <span th:text="${selectedEvent.location}"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                <div th:if="${flashMessage}" class="flash-message flash-success">
+                    <span th:text="${flashMessage}"></span>
+                </div>
+                <div th:if="${errorMessage}" class="flash-message flash-error">
+                    <span th:text="${errorMessage}"></span>
+                </div>
+
+                <!-- Upload Section - Only show to event organisers -->
+                <div th:if="${selectedEventId != null && canUpload}" class="upload-section">
+                    <h3>Upload New Photos</h3>
+                    <p class="upload-organizer-message">
+                        <i>You are the organiser of this event and can upload photos</i>
+                    </p>
+                    <form th:action="@{/gallery/upload-multiple}" method="post" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+                        <input type="hidden" name="eventId" th:value="${selectedEventId}">
+                        
+                        <div>
+                            <p class="upload-event-info">
+                                Uploading to: <strong th:text="${selectedEvent != null ? selectedEvent.title : 'Event'}"></strong>
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <label for="photos">Choose Photos:</label>
+                            <input type="file" name="photos" id="photos" accept="image/*" multiple required>
+                            <div id="file-error" class="error-message" style="color: red; display: none; margin-top: 5px;"></div>
+                            <div id="file-info" class="file-info" style="margin-top: 5px; color: #666;"></div>
+                        </div>
+                        
+                        <div th:if="${_csrf}">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="uploadBtn">Upload Photos</button>
+                    </form>
+                    <p class="upload-info">
+                        Supported formats: JPG, PNG, GIF, WebP. Maximum file size: 25MB per photo. Select multiple photos at once.
+                    </p>
+                </div>
+
+                <!-- Message for non-organisers -->
+                <div th:if="${selectedEventId != null && !canUpload && currentUserEmail != null}" class="upload-restriction-message">
+                    <h4 class="upload-restriction-title">Photo Upload Restricted</h4>
+                    <p class="upload-restriction-text">
+                        Only the event organiser can upload photos to this gallery. 
+                        <span th:if="${currentUserEmail != null}">You are currently signed in as: <strong th:text="${currentUserEmail}"></strong></span>
+                    </p>
+                </div>
+
+                <!-- Selection Mode Toggle - Only show to event organisers -->
+                <div th:if="${selectedEventId != null && canUpload && !photos.isEmpty()}" class="selection-mode-controls">
+                    <form method="get" class="selection-toggle-form">
+                        <input type="hidden" name="eventId" th:value="${selectedEventId}">
+                        <input type="hidden" name="selectionMode" th:value="${param.selectionMode != null and param.selectionMode[0] == 'true' ? 'false' : 'true'}">
+                        <button type="submit" class="btn btn-outline-primary selection-toggle-btn">
+                            <span th:if="${param.selectionMode == null or param.selectionMode[0] != 'true'}">
+                                Select Multiple Photos to Delete
+                            </span>
+                            <span th:if="${param.selectionMode != null and param.selectionMode[0] == 'true'}">
+                                ← Back to Normal View
+                            </span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Photo Grid -->
+                <div th:if="${photos.isEmpty()}" class="no-photos">
+                    <h3>No photos available</h3>
+                    <p>No photos have been uploaded for this event yet.</p>
+                </div>
+
+                <!-- Selection Mode: Wrap everything in form -->
+                <div th:if="${!photos.isEmpty() && selectedEventId != null && canUpload && param.selectionMode != null and param.selectionMode[0] == 'true'}">
+                    <form th:action="@{/gallery/delete-multiple}" method="post" id="bulkDeleteForm">
+                        <input type="hidden" name="eventId" th:value="${selectedEventId}">
+                        <div th:if="${_csrf}">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        </div>
+                        
+                        <!-- Bulk Delete Toolbar -->
+                        <div class="bulk-delete-toolbar">
+                            <div class="selection-info">
+                                <strong>Selection Mode:</strong> Check the photos you want to delete, then click "Delete Selected"
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Selected
+                            </button>
+                        </div>
+                        
+                        <!-- Photo Grid with checkboxes -->
+                        <div class="photo-grid selection-mode">
+                            <div th:each="photo : ${photos}" class="photo-card">
+                                <!-- Selection checkbox -->
+                                <div class="photo-selection-overlay">
+                                    <input type="checkbox" th:id="'photo-' + ${photo.photo_id}" 
+                                           name="photoIds" th:value="${photo.photo_id}" class="photo-select-checkbox">
+                                    <label th:for="'photo-' + ${photo.photo_id}" class="photo-select-label">
+                                        <span class="checkbox-icon">✓</span>
+                                    </label>
+                                </div>
+                                
+                                <a th:href="'#modal-' + ${photo.photo_id}" class="photo-link">
+                                    <img th:src="${photo.url}" 
+                                        th:alt="'Event photo'"
+                                        class="photo-image">
+                                </a>
+                                
+                                <div class="photo-info">
+                                    <div class="photo-meta">
+                                        <div>Uploaded: <span th:text="${#temporals.format(photo.uploaded_at, 'MMM dd, yyyy HH:mm')}"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Normal Mode: No form wrapper -->
+                <div th:if="${!photos.isEmpty() && (selectedEventId == null || !canUpload || param.selectionMode == null or param.selectionMode[0] != 'true')}" 
+                     class="photo-grid">
+                    <div th:each="photo : ${photos}" class="photo-card">
+                        <a th:href="'#modal-' + ${photo.photo_id}" class="photo-link">
+                            <img th:src="${photo.url}" 
+                                th:alt="'Event photo'"
+                                class="photo-image">
+                        </a>
+                        
+                        <div class="photo-info">
+                            <div class="photo-meta">
+                                <div>Uploaded: <span th:text="${#temporals.format(photo.uploaded_at, 'MMM dd, yyyy HH:mm')}"></span></div>
+                            </div>
+                            
+                            <!-- Delete actions - only show for event organisers -->
+                            <div th:if="${selectedEventId != null && canUpload}" 
+                                 class="photo-actions">
+                                <form th:action="@{'/gallery/delete/' + ${photo.photo_id}}" method="post" class="delete-form">
+                                    <input type="hidden" name="eventId" th:value="${selectedEventId}">
+                                    <div th:if="${_csrf}">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                    </div>
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+
+
+        <!-- CSS-only Photo Slideshow Modals -->
+        <div th:each="photo, iterStat : ${photos}" th:id="'modal-' + ${photo.photo_id}" class="modal">
+            <div class="modal-overlay">
+                <a href="#" class="close-modal" title="Close slideshow">&times;</a>
+            </div>
+            
+            <!-- Delete button - Only show for organizers -->
+            <form th:if="${selectedEventId != null && canUpload}" 
+                  th:action="@{'/gallery/delete/' + ${photo.photo_id}}" 
+                  method="post" 
+                  style="display: inline;">
+                <input type="hidden" name="eventId" th:value="${selectedEventId}">
+                <div th:if="${_csrf}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                </div>
+                <button type="submit" class="modal-delete-btn" title="Delete this photo">
+                    Delete
+                </button>
+            </form>
+            
+            <!-- Navigation arrows - Circular navigation -->
+            <!-- Previous arrow: go to previous photo, or to last photo if at first -->
+            <a th:href="${!iterStat.first} ? '#modal-' + ${photos[iterStat.index - 1].photo_id} : '#modal-' + ${photos[photos.size() - 1].photo_id}" 
+               class="nav-arrow nav-prev"
+               th:title="${!iterStat.first} ? 'Previous photo' : 'Go to last photo'">&larr;</a>
+            
+            <!-- Next arrow: go to next photo, or to first photo if at last -->
+            <a th:href="${!iterStat.last} ? '#modal-' + ${photos[iterStat.index + 1].photo_id} : '#modal-' + ${photos[0].photo_id}" 
+               class="nav-arrow nav-next"
+               th:title="${!iterStat.last} ? 'Next photo' : 'Go to first photo'">&rarr;</a>
+            
+            <!-- Photo -->
+            <img th:src="${photo.url}" 
+                 th:alt="'Event photo'"
+                 class="modal-content">
+            
+            <!-- Photo counter -->
+            <div class="photo-counter">
+                <span th:text="${iterStat.count}"></span> of <span th:text="${photos.size()}"></span>
+            </div>
+        </div>        <footer>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EventHub</h3>
+                    <p>Connecting students with amazing events and opportunities.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/#about">About</a></li>
+                        <li><a href="/browse">Browse Events</a></li>
+                        <li><a href="/recommendation">Recommendations</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>Email: example@example.com</li>
+                        <li>Phone: 123 456 789</li>
+                        <li>Location: RMIT University</li>
+                    </ul>
+                </div>
+            </div>
+                        <div class="footer-bottom">
+                <p>&copy; 2025 EventHub. All rights reserved.</p>
+            </div>
+        </footer>
+
+
+    <script>
+        // Multiple file size validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('photos');
+            const uploadForm = document.getElementById('uploadForm');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const errorDiv = document.getElementById('file-error');
+            const infoDiv = document.getElementById('file-info');
+            
+            if (fileInput && uploadForm) {
+                const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB in bytes
+                
+                function validateFiles(files) {
+                    let hasErrors = false;
+                    let errorMessages = [];
+                    let validFiles = 0;
+                    let totalSize = 0;
+                    
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        totalSize += file.size;
+                        
+                        if (file.size > MAX_FILE_SIZE) {
+                            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                            errorMessages.push(`${file.name}: ${fileSizeMB}MB exceeds 25MB limit`);
+                            hasErrors = true;
+                        } else {
+                            validFiles++;
+                        }
+                    }
+                    
+                    if (hasErrors) {
+                        errorDiv.innerHTML = errorMessages.join('<br>');
+                        errorDiv.style.display = 'block';
+                        uploadBtn.disabled = true;
+                    } else {
+                        errorDiv.style.display = 'none';
+                        uploadBtn.disabled = false;
+                    }
+                    
+                    // Show file info
+                    const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+                    if (files.length > 0) {
+                        infoDiv.textContent = `Selected ${files.length} file(s) (${totalSizeMB}MB total)`;
+                        infoDiv.style.display = 'block';
+                    } else {
+                        infoDiv.style.display = 'none';
+                    }
+                    
+                    return !hasErrors && validFiles > 0;
+                }
+                
+                // Check file sizes when files are selected
+                fileInput.addEventListener('change', function(e) {
+                    if (e.target.files && e.target.files.length > 0) {
+                        validateFiles(e.target.files);
+                    } else {
+                        errorDiv.style.display = 'none';
+                        infoDiv.style.display = 'none';
+                        uploadBtn.disabled = false;
+                    }
+                });
+                
+                // Final validation on form submit
+                uploadForm.addEventListener('submit', function(e) {
+                    if (fileInput.files && fileInput.files.length > 0) {
+                        if (!validateFiles(fileInput.files)) {
+                            e.preventDefault();
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+    <div th:replace="~{fragments/notification :: notification-script}"></div>
+    </body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Browse Events - EventHub</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <style>
+        /* Body and HTML layout for sticky footer */
+        html, body {
+            height: 100%;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        /* New styles for action buttons */
+        .action-buttons-browse {
+            display: flex;
+            gap: 10px; /* Space between the RSVP and Share buttons */
+            margin-top: 10px;
+        }
+        /* Share button styles */
+        .share-button {
+            padding: 8px 12px;
+            border: 1px solid #007bff;
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+            color: #007bff;
+        }
+        .details-button {
+            padding: 8px 12px;
+            border: 1px solid #6c757d;
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+            color: #6c757d;
+            text-decoration: none;
+        }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            right: 0;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {background-color: #f1f1f1}
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .right-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Past events styling - consistent with existing design */
+        .past-event-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0.95;
+        }
+
+        .past-event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            opacity: 1;
+        }
+
+        .past-event-card h3 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: #333;
+        }
+
+        .past-event-card p {
+            margin: 0.5rem 0;
+            color: #444;
+        }
+
+        .past-event-card strong {
+            color: #555;
+        }
+
+        /* Add padding to the past events section */
+        .past-events-container {
+            padding: 0 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .past-events-container {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<div class="main-content">
+    <div class="browse-container">
+        <h1>Browse Events</h1>
+        <div th:if="${flashMessage}" style="margin:12px 0;padding:10px;border-radius:8px;background:#e8f5e9;border:1px solid #a5d6a7;">
+            <span th:text="${flashMessage}"></span>
+        </div>
+        <form th:action="@{/browse}" method="get" class="search-filter-bar">
+            <input type="text" name="query" placeholder="Search for events, organizers, or keywords..." th:value="${query}">
+            <select name="tag">
+                <option th:selected="${tag == 'All Tags' or tag == null}">All Tags</option>
+                <option th:each="t : ${allTags}" th:value="${t.tag_name()}" th:text="${t.tag_name()}" th:selected="${tag == t.tag_name()}"></option>
+            </select>
+            <input type="date" name="date" th:value="${date}">
+            <button type="submit">Search</button>
+        </form>
+        <div class="event-list">
+            <h2>Upcoming Events</h2>
+            <div th:if="${upcomingEvents.isEmpty()}">
+                <p>No upcoming events found.</p>
+            </div>
+            <div class="event-grid" th:unless="${upcomingEvents.isEmpty()}">
+                <div th:each="event : ${upcomingEvents}" class="event-card-browse">
+                    <h3 th:text="${event.title}"></h3>
+                    <p><strong>Date:</strong> <span th:text="${event.date}"></span></p>
+                    <p><strong>Location:</strong> <span th:text="${event.location}" th:id="'location-' + ${event.event_id}" class="event-location"></span></p>
+                    <div th:id="'map-' + ${event.event_id}" class="event-map" style="width: 100%; height: 150px; margin-top: 10px; border-radius: 6px; border: 1px solid #ddd;">
+                        <p style="text-align:center; line-height: 150px; color: #888; font-style: italic;">Loading Map...</p>
+                    </div>
+                    <div class="action-buttons-browse">
+                        <form th:if="!${rsvpedEventIds.contains(event.event_id)}" th:action="@{/rsvp/confirm}" method="get">
+                            <input type="hidden" name="eventId" th:value="${event.event_id}" />
+                            <button type="submit" style="padding:8px 12px; border:1px solid #007bff; border-radius:8px; cursor:pointer; background:#007bff; color:#fff; font-weight:500; font-size:0.9rem;">
+                                RSVP
+                            </button>
+                        </form>
+                        <form th:if="${rsvpedEventIds.contains(event.event_id)}" th:action="@{/cancel-rsvp}" method="post">
+                            <input type="hidden" name="eventId" th:value="${event.event_id}" />
+                            <button type="submit" style="padding:8px 12px; border:1px solid #6c757d; border-radius:8px; cursor:pointer; background:#6c757d; color:#fff; font-weight:500; font-size:0.9rem;">
+                                Cancel RSVP
+                            </button>
+                        </form>
+
+                        <a th:href="@{/events/{eventId}(eventId=${event.event_id})}" style="padding:8px 12px; border:1px solid #6c757d; border-radius:8px; cursor:pointer; background:transparent; color:#6c757d; text-decoration: none; font-weight:500; font-size:0.9rem;">More Details</a>
+
+                        <button type="button"
+                                th:data-event-url="@{/events/{eventId}(eventId=${event.event_id})}"
+                                onclick="copyShareLink(this)"
+                                style="padding:8px 12px; border:1px solid #007bff; border-radius:8px; cursor:pointer; background:transparent; color:#007bff; font-weight:500; font-size:0.9rem;">
+                            Share 🔗
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="event-list past-events-container">
+            <h2>Past Events</h2>
+            <div th:if="${pastEvents.isEmpty()}">
+                <p>No past events found.</p>
+            </div>
+            <div class="event-grid" th:unless="${pastEvents.isEmpty()}">
+                <div th:each="event : ${pastEvents}" class="past-event-card">
+                    <h3 th:text="${event.title}"></h3>
+                    <p><strong>Date:</strong> <span th:text="${event.date}"></span></p>
+                    <p><strong>Location:</strong> <span th:text="${event.location}"></span></p>
+                    <p th:if="${event.description != null && !event.description.isEmpty()}">
+                        <strong>Description:</strong> <span th:text="${event.description}"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3>EventHub</h3>
+            <p>Connecting students with amazing events and opportunities.</p>
+        </div>
+        <div class="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href="/#about">About</a></li>
+                <li><a href="/browse">Browse Events</a></li>
+                <li><a href="/recommendation">Recommendations</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>Contact</h4>
+            <ul>
+                <li>Email: example@example.com</li>
+                <li>Phone: 123 456 789</li>
+                <li>Location: RMIT University</li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2025 EventHub. All rights reserved.</p>
+    </div>
+</footer>
+<script>
+
+    function copyShareLink(buttonElement) {
+        const shareUrl = buttonElement.getAttribute('data-event-url');
+
+        const fullUrl = window.location.origin + shareUrl;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(fullUrl)
+                .then(() => {
+                    const originalText = buttonElement.innerHTML;
+                    buttonElement.innerHTML = "Copied! 👍";
+
+                    // Reset text after 2 seconds
+                    setTimeout(() => {
+                        buttonElement.innerHTML = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    alert('Could not automatically copy the link. Please copy this URL manually: ' + fullUrl);
+                });
+        } else {
+            alert('Please copy this URL manually: ' + fullUrl);
+        }
+    }
+</script>
+
+<script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${GOOGLE_API_KEY} + '&callback=initMaps'" async defer></script>
+<script>
+    function initMap(mapElementId, locationString) {
+        if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+            console.error('Google Maps API not loaded.');
+            return;
+        }
+        const geocoder = new google.maps.Geocoder();
+        const mapDiv = document.getElementById(mapElementId);
+        if (!mapDiv) return;
+        geocoder.geocode({ 'address': locationString }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+                const map = new google.maps.Map(mapDiv, {
+                    center: results[0].geometry.location,
+                    zoom: 15,
+                    fullscreenControl: false,
+                    streetViewControl: false,
+                    mapTypeControl: false,
+                    zoomControl: true,
+                });
+                new google.maps.Marker({
+                    map: map,
+                    position: results[0].geometry.location,
+                });
+            } else {
+                mapDiv.innerHTML = '<p style="text-align:center; line-height:150px;">Map not available.</p>';
+            }
+        });
+    }
+
+    function initMaps() {
+        document.querySelectorAll('.event-card-browse').forEach(card => {
+            const mapElement = card.querySelector('.event-map');
+            const locationSpan = card.querySelector('.event-location');
+            if (mapElement && locationSpan) {
+                const mapId = mapElement.id;
+                const location = locationSpan.textContent.trim();
+                if (location && mapId) {
+                    initMap(mapId, location);
+                }
+            }
+        });
+    }
+</script>
+<div th:replace="~{fragments/notification :: notification-script}"></div>
+</body>
+</html>

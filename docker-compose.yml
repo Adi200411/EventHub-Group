@@ -1,0 +1,58 @@
+name: eventhub
+
+services:
+    web:
+        build: 
+            context: .
+            dockerfile: Dockerfile
+        container_name: eventhub-web
+        restart: always
+        ports:
+            - "8080:8080"
+        environment:
+            - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/eventhub?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Australia/Melbourne
+            - SPRING_DATASOURCE_USERNAME=eventhub_user
+            - SPRING_DATASOURCE_PASSWORD=password123
+            - SPRING_FLYWAY_URL=jdbc:mysql://mysql:3306/eventhub?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Australia/Melbourne
+            - SPRING_FLYWAY_USER=eventhub_user
+            - SPRING_FLYWAY_PASSWORD=password123
+            - SPRING_PROFILES_ACTIVE=docker
+        depends_on:
+            mysql:
+                condition: service_healthy
+        networks:
+            - app-network
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+
+    mysql:
+        image: mysql:8.0
+        container_name: eventhub-mysql
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: root123
+            MYSQL_DATABASE: eventhub
+            MYSQL_USER: eventhub_user
+            MYSQL_PASSWORD: password123
+        ports:
+            - "3307:3306"
+        volumes:
+            - ./mysql_data:/var/lib/mysql
+        networks:
+            - app-network
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "eventhub_user", "-ppassword123"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+
+networks:
+    app-network:
+        driver: bridge
+
+volumes:
+    mysql_data:

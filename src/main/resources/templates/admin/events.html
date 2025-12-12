@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Events</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<section class="events">
+    <div class="container">
+        <h1>Admin - All Events</h1>
+
+        <div class="event-grid">
+            <div class="event-card-browse" th:each="event : ${events}">
+                <h3 th:text="${event.title()}">Event Title</h3>
+                <p><strong>Date:</strong> <span th:text="${event.date()}"></span></p>
+                <p><strong>Location:</strong> <span th:text="${event.location()}"></span></p>
+                <p><strong>Status:</strong> <span th:text="${event.status()}"></span></p>
+                <p><strong>Capacity:</strong> <span th:text="${event.capacity()}"></span></p>
+
+                <div class="back-links">
+                    <a th:href="@{'/admin/events/' + ${event.event_id()}}" class="back-btn secondary">View</a>
+                    <a th:href="@{'/admin/events/' + ${event.event_id()} + '/edit'}" class="back-btn">Edit</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+</section>
+
+<div th:replace="~{fragments/notification :: notification-script}"></div>
+</body>
+</html>

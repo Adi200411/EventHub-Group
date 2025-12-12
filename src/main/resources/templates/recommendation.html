@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Recommendations</title>
+        <link rel="stylesheet" th:href="@{/style.css}" />
+        <style>
+            /* Body and HTML layout for sticky footer */
+            html, body {
+                height: 100%;
+            }
+
+            body {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .main-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* Recommendations Section Grid */
+            .events {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 2rem 1.25rem;
+                text-align: center;
+                flex: 1;
+            }
+
+            .events h1 {
+                font-size: 2rem;
+                margin-bottom: 1.5rem;
+                border-bottom: 2px solid black;
+                display: inline-block;
+            }
+
+            .events-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                column-gap: 20px;
+                row-gap: 75px;
+                margin-top: 20px;
+            }
+
+            .event-card {
+                background: #fff;
+                border-radius: 12px;
+                padding: 16px 18px;
+                box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                height: 100%;
+                text-align: left;
+            }
+
+            .event-card h3 {
+                margin: 0 0 8px;
+                font-size: 1.1rem;
+                font-weight: bold;
+                color: #333;
+            }
+
+            .event-card p {
+                margin: 4px 0;
+                color: #555;
+                font-size: 0.95rem;
+            }
+
+            .action-buttons {
+                display: flex;
+                gap: 10px; /* Space between the RSVP and Share buttons */
+                margin-top: 10px;
+                /* Allow buttons to wrap on small screens */
+                flex-wrap: wrap;
+            }
+
+            /* NEW: Map Styling */
+            .event-map {
+                width: 100%;
+                height: 150px;
+                margin-top: 10px;
+                margin-bottom: 10px;
+                border-radius: 6px;
+                border: 1px solid #ddd;
+            }
+
+            .event-map p {
+                margin: 0;
+                line-height: 150px;
+                text-align: center;
+                font-style: italic;
+                color: #888;
+            }
+            .details-button {
+                padding: 8px 12px;
+                border: 1px solid #6c757d;
+                border-radius: 8px;
+                cursor: pointer;
+                background: transparent;
+                color: #6c757d;
+                text-decoration: none;
+            }
+            /* END NEW: Map Styling */
+
+            /* Responsive breakpoints */
+            @media (max-width: 1024px) {
+                .events-grid { grid-template-columns: repeat(2, 1fr); }
+            }
+
+            @media (max-width: 640px) {
+                .events-grid { grid-template-columns: 1fr; }
+                .action-buttons { flex-direction: column; }
+            }
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                background-color: #f9f9f9;
+                min-width: 160px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1;
+                right: 0;
+            }
+
+            .dropdown-content a {
+                color: black;
+                padding: 12px 16px;
+                text-decoration: none;
+                display: block;
+            }
+
+            .dropdown-content a:hover {background-color: #f1f1f1}
+
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+            .right-nav {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <div th:replace="~{fragments/header :: header}"></div>
+
+        <div class="main-content">
+        <div id="about"></div>
+        <div id="events"></div>
+
+        <section class="events">
+            <h1>Recommended Events</h1>
+            <div th:if="${flashMessage}" style="margin:12px 0;padding:10px;border-radius:8px;background:#e8f5e9;border:1px solid #a5d6a7;">
+                <span th:text="${flashMessage}"></span>
+            </div>
+
+            <div class="events-grid" th:if="${events}">
+                <article class="event-card" th:each="event : ${events}">
+                    <h3 th:text="${event.title}">Event Title</h3>
+                    <p><strong>Date:</strong> <span th:text="${event.date}">2025-10-01</span></p>
+                    <p>
+                        <strong>Location:</strong>
+                        <span th:text="${event.location}" th:id="'location-' + ${event.event_id()}" class="event-location">Venue</span>
+                    </p>
+                    <p th:text="${event.description}">Description</p>
+
+                    <div th:id="'map-' + ${event.event_id()}" class="event-map">
+                        <p>Loading Map...</p>
+                    </div>
+
+                    <div class="action-buttons">
+                        <form th:if="!${rsvpedEventIds.contains(event.event_id)}" th:action="@{/rsvp/confirm}" method="get">
+                            <input type="hidden" name="eventId" th:value="${event.event_id}" />
+                            <button type="submit" style="padding:8px 12px; border:1px solid #007bff; border-radius:8px; cursor:pointer; background:#007bff; color:#fff; font-weight:500; font-size:0.9rem;">
+                                RSVP
+                            </button>
+                        </form>
+                        <form th:if="${rsvpedEventIds.contains(event.event_id)}" th:action="@{/cancel-rsvp}" method="post">
+                            <input type="hidden" name="eventId" th:value="${event.event_id}" />
+                            <button type="submit" style="padding:8px 12px; border:1px solid #6c757d; border-radius:8px; cursor:pointer; background:#6c757d; color:#fff; font-weight:500; font-size:0.9rem;">
+                                Cancel RSVP
+                            </button>
+                        </form>
+
+                        <a th:href="@{/events/{eventId}(eventId=${event.event_id})}" style="padding:8px 12px; border:1px solid #6c757d; border-radius:8px; cursor:pointer; background:transparent; color:#6c757d; text-decoration: none; font-weight:500; font-size:0.9rem;">More Details</a>
+
+                        <button type="button"
+                                th:data-event-url="@{/events/{eventId}(eventId=${event.event_id})}"
+                                onclick="copyShareLink(this)"
+                                style="padding:8px 12px; border:1px solid #007bff; border-radius:8px; cursor:pointer; background:transparent; color:#007bff; font-weight:500; font-size:0.9rem;">
+                            Share 🔗
+                        </button>
+                    </div>
+                </article>
+            </div>
+
+            <p th:if="${#lists.isEmpty(events)}">No upcoming events can be recommended</p>
+        </section>
+
+        </div>
+
+        <footer>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>EventHub</h3>
+                    <p>Connecting students with amazing events and opportunities.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/#about">About</a></li>
+                        <li><a href="/browse">Browse Events</a></li>
+                        <li><a href="/recommendation">Recommendations</a></li>
+                        
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>Email: example@example.com</li>
+                        <li>Phone: 123 456 789</li>
+                        <li>Location: RMIT University</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 EventHub. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <script>
+            // 1. Function to initialize the map for a single event
+            function initMap(mapElementId, locationString) {
+                // Check if the Google Maps API objects are loaded
+                if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                    console.error('Google Maps API not loaded.');
+                    return;
+                }
+
+                const geocoder = new google.maps.Geocoder();
+                const mapDiv = document.getElementById(mapElementId);
+
+                if (!mapDiv) return;
+
+                  geocoder.geocode({ 'address': locationString }, (results, status) => {
+                    if (status === 'OK' && results[0]) {
+                        const mapOptions = {
+                            center: results[0].geometry.location,
+                            zoom: 15,
+                            mapTypeId: google.maps.MapTypeId.ROADMAP,
+                            fullscreenControl: false,
+                            streetViewControl: false,
+                            mapTypeControl: false,
+                            zoomControl: true,
+                        };
+
+                        const map = new google.maps.Map(mapDiv, mapOptions);
+
+                        new google.maps.Marker({
+                            map: map,
+                            position: results[0].geometry.location,
+                            title: locationString
+                        });
+                    } else {
+                        console.error('Geocode was not successful for ' + locationString + ' for the following reason: ' + status);
+                        mapDiv.innerHTML = '<p style="text-align:center;">Location map unavailable (' + status + ').</p>';
+                    }
+                });
+            }
+
+            // 2. Function to load maps for all events on the page
+            function loadMaps() {
+                const eventCards = document.querySelectorAll('.event-card');
+
+                eventCards.forEach(card => {
+                    // Locate the map container and location element within the card
+                    const mapElement = card.querySelector('.event-map');
+                    const locationSpan = card.querySelector('.event-location');
+
+                    if (mapElement && locationSpan) {
+                        const mapId = mapElement.id;
+                        const location = locationSpan.textContent.trim();
+
+                        if (location && mapId) {
+                            initMap(mapId, location);
+                        }
+                    }
+                });
+            }
+
+            // Assign the main loading function to the window object for the API script's callback
+            window.initMaps = loadMaps;
+
+            function copyShareLink(buttonElement) {
+                const shareUrl = buttonElement.getAttribute('data-event-url');
+
+                // 2. Construct the absolute URL using the current domain
+                const fullUrl = window.location.origin + shareUrl;
+
+                // 3. Use the modern Clipboard API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(fullUrl)
+                        .then(() => {
+                            // Success feedback: Temporarily change button text
+                            const originalText = buttonElement.innerHTML;
+                            buttonElement.innerHTML = "Copied! 👍";
+
+                            setTimeout(() => {
+                                buttonElement.innerHTML = originalText;
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                            console.warn('Could not automatically copy the link. Please copy this URL manually: ' + fullUrl);
+                        });
+                } else {
+                    console.warn('Please copy this URL manually: ' + fullUrl);
+                }
+            }
+        </script>
+
+                </script>
+
+        <script th:src="'https://maps.googleapis.com/maps/api/js?key=' + ${GOOGLE_API_KEY} + '&callback=initMaps'" async defer></script>
+        
+        <!-- Notification Script -->
+        <div th:replace="~{fragments/notification :: notification-script}"></div>
+    </body>
+</html>
+
+    </body>
+</html>

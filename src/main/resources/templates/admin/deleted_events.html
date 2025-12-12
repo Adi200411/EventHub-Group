@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Deleted Events (Admin)</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+
+<!-- Navbar -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<section class="events">
+    <div class="container">
+        <h1>Deleted Events</h1>
+
+        <div class="event-grid">
+            <div class="event-card-browse" th:each="event, iterStat : ${events}">
+                <h3 th:text="${event.title()}">Event Title</h3>
+                <p><strong>Date:</strong> <span th:text="${event.date()}"></span></p>
+                <p><strong>Location:</strong> <span th:text="${event.location()}"></span></p>
+
+                <!-- Link log info to the matching event -->
+                <div th:each="log : ${logs}" 
+                     th:if="${log.event_id()} == ${event.event_id()}">
+                    <p><strong>Deleted By (Admin ID):</strong> <span th:text="${log.admin_id()}"></span></p>
+                    <p><strong>Reason:</strong> <span th:text="${log.reason()}"></span></p>
+                    <p><strong>Deleted At:</strong> <span th:text="${log.deleted_at()}"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="back-links">
+            <a href="/admin/events" class="back-btn secondary">Back to All Events</a>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

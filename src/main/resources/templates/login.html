@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login — EventHub</title>
+
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <style>
+        /* Body and HTML layout for sticky footer */
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+  </head>
+
+  <body>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <div class="main-content">
+    <div class="about">
+      <h1>Login to your EventHub account</h1>
+
+      <div th:if="${error}" class="error-message">
+        <p th:text="${error}"></p>
+      </div>
+
+      <form class="card" th:action="@{/users/login}" method="post" autocomplete="on">
+        <label for="email">Email:</label>
+        <input id="email" name="email" type="email" placeholder="student@university.com" required />
+        <br>
+        <label for="password">Password:</label>
+        <input id="password" name="password" type="password" placeholder="••••••••" required />
+
+        <div style="margin-top: 1rem;">
+          <button type="submit" class="login">Submit</button>
+        </div>
+      </form>
+
+      <p>
+        <a href="landing.html" th:href="@{/}">← Return to landing page</a>
+      </p>
+    </div>
+    </div>
+
+    <footer>
+      <div class="footer-content">
+          <div class="footer-section">
+            <h3>EventHub</h3>
+            <p>Connecting students with amazing events and opportunities.</p>
+          </div>
+          <div class="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+              <li><a href="/#about">About</a></li>
+              <li><a href="/browse">Browse Events</a></li>
+              <li><a href="/recommendation">Recommendations</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h4>Contact</h4>
+            <ul>
+              <li>Email: example@example.com</li>
+              <li>Phone: 123 456 789</li>
+              <li>Location: RMIT University</li>
+              </ul>
+          </div>
+          </div>
+          <div class="footer-bottom">
+            <p>&copy; 2025 EventHub. All rights reserved.</p>
+          </div>
+    </footer>
+  </body>
+</html>

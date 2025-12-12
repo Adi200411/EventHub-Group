@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title th:text="${formMode == 'edit'} ? 'Edit Event • Organiser' : 'Create Event • Organiser'">Event • Organiser</title>
+  <link rel="stylesheet" th:href="@{/style.css}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      right: 0;
+    }
+    .dropdown-content a {
+      color: black;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+    .dropdown-content a:hover {background-color: #f1f1f1}
+    .dropdown:hover .dropdown-content {display: block;}
+    .right-nav {display: flex; align-items: center; gap: 10px;}
+
+    /* === Match feedback form styling === */
+    .feedback-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+    }
+
+    .feedback-header h1 {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #222;
+      border-bottom: 3px solid #007bff;
+      display: inline-block;
+      padding-bottom: .4rem;
+      margin-bottom: 2rem;
+    }
+
+    .feedback-form-wrapper.organiser {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+      padding: 2rem;
+    }
+
+    .feedback-form-wrapper.organiser p {
+      margin-bottom: 1.2rem;
+    }
+
+    .feedback-form-wrapper.organiser label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: .4rem;
+      color: #333;
+    }
+
+    .feedback-form-wrapper.organiser input[type="text"],
+    .feedback-form-wrapper.organiser input[type="number"],
+    .feedback-form-wrapper.organiser input[type="date"],
+    .feedback-form-wrapper.organiser input[type="time"],
+    .feedback-form-wrapper.organiser select,
+    .feedback-form-wrapper.organiser textarea {
+      width: 100%;
+      padding: .75rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fafafa;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .feedback-form-wrapper.organiser input:focus,
+    .feedback-form-wrapper.organiser textarea:focus,
+    .feedback-form-wrapper.organiser select:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    .feedback-form-wrapper.organiser textarea {
+      min-height: 160px;
+      resize: vertical;
+    }
+
+    .err {
+      color: #b00020;
+      font-size: .9rem;
+      margin-top: .3rem;
+    }
+
+    .submit-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .submit-btn, .back-btn {
+      display: inline-block;
+      text-align: center;
+      padding: 0.85rem 2rem;
+      border: none;
+      border-radius: 25px;
+      font-weight: 600;
+      font-size: 1rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 200px;
+    }
+
+    .submit-btn {
+      background-color: #007bff;
+      color: #fff;
+      border: 2px solid #007bff;
+    }
+
+    .submit-btn:hover {
+      background-color: #0056b3;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .back-btn {
+      background-color: #fff;
+      color: #007bff;
+      border: 2px solid #007bff;
+      text-decoration: none;
+    }
+
+    .back-btn:hover {
+      background-color: #007bff;
+      color: #fff;
+    }
+
+    @media (max-width: 600px) {
+      .feedback-form-wrapper.organiser {padding: 1.5rem;}
+      .submit-btn, .back-btn {width: 100%; min-width: unset;}
+    }
+  </style>
+</head>
+
+<body>
+  <div th:replace="~{fragments/header :: header}"></div>
+
+  <!-- ✅ MAIN FORM SECTION -->
+  <section class="feedback-container">
+    <div class="feedback-header">
+      <h1 th:text="${formMode == 'edit'} ? 'Edit Event' : 'Create Event'">Create Event</h1>
+    </div>
+
+    <div class="feedback-form-wrapper organiser">
+      <form
+        th:object="${form}"
+        th:action="${formMode == 'edit'} ? @{/organiser/events/{id}(id=${eventId})} : @{/organiser/events}"
+        method="post">
+
+        <div th:if="${#fields.hasAnyErrors()}" class="error-message" style="margin-bottom: 1rem;">
+          Please correct the highlighted fields.
+        </div>
+
+        <p>
+          <label for="title">Title:</label>
+          <input id="title" type="text" th:field="*{title}" placeholder="e.g., Tech Talk: Intro to Spring Boot"
+                 th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''" required />
+          <div class="err" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+        </p>
+
+        <p>
+          <label for="description">Description:</label>
+          <textarea id="description" th:field="*{description}" rows="5" placeholder="Event details..." required
+                    th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"></textarea>
+          <div class="err" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+        </p>
+
+        <p>
+          <label for="location">Location:</label>
+          <input id="location" type="text" th:field="*{location}" placeholder="Building 80, Level 7" required
+                 th:classappend="${#fields.hasErrors('location')} ? 'is-invalid' : ''" />
+          <div class="err" th:if="${#fields.hasErrors('location')}" th:errors="*{location}"></div>
+        </p>
+
+        <p>
+          <label for="eventDate">Event Date:</label>
+          <input id="eventDate" type="date"
+                 th:field="*{eventDate}"
+                 th:attr="min=${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"
+                 th:classappend="${#fields.hasErrors('eventDate')} ? 'is-invalid' : ''" />
+          <div class="err" th:if="${#fields.hasErrors('eventDate')}" th:errors="*{eventDate}"></div>
+        </p>
+
+        <p>
+          <label for="startTime">Start Time:</label>
+          <input id="startTime" type="time" step="1800" min="00:00" max="23:30" th:field="*{startTime}" required
+                 th:classappend="${#fields.hasErrors('startTime')} ? 'is-invalid' : ''" />
+          <div class="err" th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}"></div>
+        </p>
+
+        <p>
+          <label for="endTime">End Time:</label>
+          <input id="endTime" type="time" step="1800" min="00:30" max="23:59" th:field="*{endTime}" required
+                 th:classappend="${#fields.hasErrors('endTime')} ? 'is-invalid' : ''" />
+          <div class="err" th:if="${#fields.hasErrors('endTime')}" th:errors="*{endTime}"></div>
+        </p>
+
+        <p>
+          <label for="status">Status:</label>
+          <select id="status" th:field="*{status}">
+            <option value="ACTIVE">ACTIVE</option>
+          </select>
+          <div class="err" th:if="${#fields.hasErrors('status')}" th:errors="*{status}"></div>
+        </p>
+
+        <p>
+          <label for="capacity">Capacity:</label>
+          <input id="capacity" type="number" min="1" th:field="*{capacity}" inputmode="numeric" required
+                 th:classappend="${#fields.hasErrors('capacity')} ? 'is-invalid' : ''" />
+          <div class="err" th:if="${#fields.hasErrors('capacity')}" th:errors="*{capacity}"></div>
+        </p>
+
+      <p>
+        <label for="tags">Tags (comma-separated):</label><br>
+        <input id="tags" type="text" th:field="*{tags}" placeholder="e.g., tech, programming, ai" />
+      </p>
+
+        <div class="submit-section">
+          <button type="submit" class="submit-btn"
+                  th:text="${formMode == 'edit'} ? 'Save Changes' : 'Create Event'">Create Event</button>
+          <a th:href="@{/organiser/events}" class="back-btn">Back to List</a>
+        </div>
+      </form>
+
+      <div class="submit-section" th:if="${formMode == 'edit'}">
+        <form th:action="@{/organiser/events/{id}/cancel(id=${eventId})}" method="post"
+              onsubmit="return confirm('Cancel this event? This is a soft cancel and can be re-activated later.');">
+          <button class="back-btn" type="submit">Cancel Event</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>EventHub</h3>
+        <p>Connecting students with amazing events and opportunities.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#events">Events</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <ul>
+          <li>Email: example@example.com</li>
+          <li>Phone: 123 456 789</li>
+          <li>Location: RMIT University</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 EventHub. All rights reserved.</p>
+    </div>
+  </footer>
+<div th:replace="~{fragments/notification :: notification-script}"></div>
+</body>
+</html>

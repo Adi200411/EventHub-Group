@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Event • Admin</title>
+  <link rel="stylesheet" th:href="@{/style.css}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* === Unified form styling (same as organiser/feedback) === */
+    .feedback-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+    }
+
+    .feedback-header h1 {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #222;
+      border-bottom: 3px solid #007bff;
+      display: inline-block;
+      padding-bottom: .4rem;
+      margin-bottom: 2rem;
+    }
+
+    .feedback-form-wrapper.organiser {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+      padding: 2rem;
+    }
+
+    .feedback-form-wrapper.organiser p {
+      margin-bottom: 1.2rem;
+    }
+
+    .feedback-form-wrapper.organiser label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: .4rem;
+      color: #333;
+    }
+
+    .feedback-form-wrapper.organiser input[type="text"],
+    .feedback-form-wrapper.organiser input[type="number"],
+    .feedback-form-wrapper.organiser input[type="date"],
+    .feedback-form-wrapper.organiser input[type="time"],
+    .feedback-form-wrapper.organiser select,
+    .feedback-form-wrapper.organiser textarea {
+      width: 100%;
+      padding: .75rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fafafa;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .feedback-form-wrapper.organiser input:focus,
+    .feedback-form-wrapper.organiser textarea:focus,
+    .feedback-form-wrapper.organiser select:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    .feedback-form-wrapper.organiser textarea {
+      min-height: 160px;
+      resize: vertical;
+    }
+
+    .submit-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .submit-btn, .back-btn, .delete-btn {
+      display: inline-block;
+      text-align: center;
+      padding: 0.85rem 2rem;
+      border: none;
+      border-radius: 25px;
+      font-weight: 600;
+      font-size: 1rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 200px;
+    }
+
+    .submit-btn {
+      background-color: #007bff;
+      color: #fff;
+      border: 2px solid #007bff;
+    }
+
+    .submit-btn:hover {
+      background-color: #0056b3;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .back-btn {
+      background-color: #fff;
+      color: #007bff;
+      border: 2px solid #007bff;
+      text-decoration: none;
+    }
+
+    .back-btn:hover {
+      background-color: #007bff;
+      color: #fff;
+    }
+
+    .delete-btn {
+      background-color: #fff;
+      color: #dc3545;
+      border: 2px solid #dc3545;
+      text-decoration: none;
+    }
+
+    .delete-btn:hover {
+      background-color: #dc3545;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+    }
+
+    @media (max-width: 600px) {
+      .feedback-form-wrapper.organiser {padding: 1.5rem;}
+      .submit-btn, .back-btn, .delete-btn {width: 100%; min-width: unset;}
+    }
+  </style>
+</head>
+
+<body>
+  <div th:replace="~{fragments/header :: header}"></div>
+
+  <section class="feedback-container">
+    <div class="feedback-header">
+      <h1>Edit Event (Admin)</h1>
+    </div>
+
+    <div class="feedback-form-wrapper organiser">
+      <!-- ✏️ EDIT FORM -->
+      <form th:action="@{'/admin/events/' + ${event.event_id()} + '/edit'}" method="post">
+        <p>
+          <label for="title">Title:</label>
+          <input id="title" type="text" name="title" th:value="${event.title()}" required />
+        </p>
+
+        <p>
+          <label for="description">Description:</label>
+          <textarea id="description" name="description" rows="5" required
+                    th:text="${event.description()}"></textarea>
+        </p>
+
+        <p>
+          <label for="location">Location:</label>
+          <input id="location" type="text" name="location" th:value="${event.location()}" required />
+        </p>
+
+        <p>
+          <label for="eventDate">Event Date:</label>
+          <input id="eventDate" type="date" name="date"
+                 th:value="${event.date() != null ? event.date() : ''}"
+                 th:attr="min=${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"
+                 required />
+        </p>
+
+        <p>
+          <label for="startTime">Start Time:</label>
+          <input id="startTime" type="time" name="startTime" step="1800" min="00:00" max="23:30"
+                 th:value="${#strings.contains(event.start_time(), 'T')
+                   ? #strings.substring(#strings.substringAfter(event.start_time(), 'T'), 0, 5)
+                   : #strings.substring(event.start_time(), 0, 5)}"
+                 required />
+        </p>
+
+
+        <p>
+          <label for="finishTime">End Time:</label>
+          <input id="finishTime" type="time" name="finishTime" step="1800" min="00:30" max="23:59"
+                  th:value="${#strings.contains(event.finish_time(), ' ')
+                    ? #strings.substring(#strings.substringAfter(event.finish_time(), ' '), 0, 5)
+                    : (#strings.contains(event.finish_time(), 'T')
+                    ? #strings.substring(#strings.substringAfter(event.finish_time(), 'T'), 0, 5)
+                    : #strings.substring(event.finish_time(), 0, 5))}"
+                 required />
+        </p>
+
+        <p>
+          <label for="status">Status:</label>
+          <select id="status" name="status" required>
+            <option value="ACTIVE" th:selected="${event.status() == 'ACTIVE'}">ACTIVE</option>
+            <option value="CANCELLED" th:selected="${event.status() == 'CANCELLED'}">CANCELLED</option>
+          </select>
+        </p>
+
+        <p>
+          <label for="capacity">Capacity:</label>
+          <input id="capacity" type="number" name="capacity" min="1" th:value="${event.capacity()}" required />
+        </p>
+
+        <div class="submit-section">
+          <button type="submit" class="submit-btn">Save Changes</button>
+          <a th:href="@{/admin/events}" class="back-btn">Back to List</a>
+        </div>
+      </form>
+
+      <!-- 🗑️ DELETE FORM WITH REASON -->
+      <div style="margin-top:2rem; border-top:1px solid #eee; padding-top:1.5rem;">
+        <h3 style="color:#dc3545;">Delete Event</h3>
+        <form th:action="@{'/admin/events/' + ${event.event_id()} + '/delete'}" method="post"
+              onsubmit="return confirm('Are you sure you want to permanently delete this event? This action cannot be undone.');">
+          <label for="reason">Reason for Deletion:</label><br>
+          <textarea id="reason" name="reason" rows="3" cols="40" required></textarea><br><br>
+          <button type="submit" class="delete-btn">Delete Event</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>EventHub Admin</h3>
+        <p>Manage all events efficiently and securely.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="/admin/events">Events</a></li>
+          <li><a href="/admin/users">Users</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 EventHub. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

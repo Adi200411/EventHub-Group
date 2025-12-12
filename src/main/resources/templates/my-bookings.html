@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>My Bookings - EventHub</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <style>
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            right: 0;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {background-color: #f1f1f1}
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .right-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="browse-container">
+    <h1>My Bookings</h1>
+    <div th:if="${bookedEvents.isEmpty()}">
+        <p>You have not booked any events yet.</p>
+    </div>
+    <div class="event-grid" th:unless="${bookedEvents.isEmpty()}">
+        <div th:each="event : ${bookedEvents}" class="event-card-browse">
+            <h3 th:text="${event.title}"></h3>
+            <p><strong>Date:</strong> <span th:text="${event.date}"></span></p>
+            <p><strong>Location:</strong> <span th:text="${event.location}"></span></p>
+            <p><strong>Status:</strong> <span style="color: green; font-weight: bold;">BOOKED</span></p>
+            <img th:src="@{/qrcode/{eventId}/{userId}(eventId=${event.event_id}, userId=${user.user_id})}" alt="QR Code" style="width: 150px; height: 150px;"/>
+            <p style="color: grey; font-size: 0.8em;" th:text="@{http://localhost:8080/checkin/{eventId}/{userId}(eventId=${event.event_id}, userId=${user.user_id})}"></p>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <form th:action="@{/cancel-booking}" method="post">
+                    <input type="hidden" name="eventId" th:value="${event.event_id}" />
+                    <button type="submit" style="padding:8px 12px; border:1px solid #6c757d; border-radius:8px; cursor:pointer; background:#6c757d; color:#fff; font-weight:500; font-size:0.9rem;">
+                        Cancel RSVP
+                    </button>
+                </form>
+                <a th:href="@{/events/{eventId}(eventId=${event.event_id})}" style="padding:8px 12px; border:1px solid #6c757d; border-radius:8px; cursor:pointer; background:transparent; color:#6c757d; text-decoration: none; font-weight:500; font-size:0.9rem;">More Details</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Past Events Section -->
+    <div class="event-list" style="margin-top: 3rem;">
+        <h2>Past Events You Attended</h2>
+        <div th:if="${pastAttendedEvents == null || pastAttendedEvents.isEmpty()}">
+            <p>You have not attended any events yet.</p>
+        </div>
+        <div class="event-grid" th:unless="${pastAttendedEvents == null || pastAttendedEvents.isEmpty()}">
+            <div th:each="event : ${pastAttendedEvents}" class="event-card-browse">
+                <h3 th:text="${event.title}"></h3>
+                <p><strong>Date:</strong> <span th:text="${event.date}"></span></p>
+                <p><strong>Location:</strong> <span th:text="${event.location}"></span></p>
+                <p><strong>Status:</strong> <span style="color: #6c757d; font-weight: bold;">ATTENDED</span></p>
+                
+                <!-- Photo Thumbnails Preview -->
+                <div th:if="${eventThumbnails != null && eventThumbnails.get(event.event_id) != null && !eventThumbnails.get(event.event_id).isEmpty()}" 
+                     class="event-thumbnails">
+                    <h5>Gallery Preview:</h5>
+                    <div class="thumbnail-container">
+                        <div th:each="photo, iterStat : ${eventThumbnails.get(event.event_id)}" 
+                             th:if="${iterStat.index < 3}"
+                             class="thumbnail-item">
+                            <a th:href="@{'/gallery/event/' + ${event.event_id}}" 
+                               style="text-decoration: none;">
+                                <img th:src="${photo.url}" 
+                                     th:alt="'Photo from ' + ${event.title}">
+                            </a>
+                        </div>
+                        <!-- Show "+X more" if there are more than 3 photos -->
+                        <div th:if="${eventThumbnails.get(event.event_id).size() > 3}" 
+                             class="more-photos-indicator"
+                             th:onclick="|location.href='@{'/gallery/event/' + ${event.event_id}}'|">
+                            <span th:text="'+' + ${eventThumbnails.get(event.event_id).size() - 3} + ' more'">+X more</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Message when no photos available -->
+                <div th:if="${eventThumbnails == null || eventThumbnails.get(event.event_id) == null || eventThumbnails.get(event.event_id).isEmpty()}"
+                     class="no-photos-message">
+                    No photos uploaded yet
+                </div>
+                
+                <!-- Feedback and Gallery links for past events -->
+                <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a th:href="@{'/feedback/event/' + ${event.event_id}}"
+                       style="display: inline-block; padding: 8px 16px; background: #28a745; color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem; transition: background 0.3s ease;"
+                       onmouseover="this.style.background='#218838'"
+                       onmouseout="this.style.background='#28a745'">
+                        Leave Feedback
+                    </a>
+                    <a th:href="@{'/gallery/event/' + ${event.event_id}}"
+                       style="display: inline-block; padding: 8px 16px; background: #6f42c1; color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem; transition: background 0.3s ease;"
+                       onmouseover="this.style.background='#5a32a3'"
+                       onmouseout="this.style.background='#6f42c1'">
+                        View Gallery
+                    </a>
+                    <a th:href="@{/events/{eventId}(eventId=${event.event_id})}" 
+                       style="display: inline-block; padding: 8px 16px; background: transparent; color: #6c757d; text-decoration: none; border: 1px solid #6c757d; border-radius: 6px; font-size: 0.9rem;">
+                        Event Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/notification :: notification-script}"></div>
+</body>
+</html>

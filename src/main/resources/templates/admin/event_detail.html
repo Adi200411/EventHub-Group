@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Event Detail</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<section class="event">
+    <h1>Event Details</h1>
+
+    <div class="card" th:if="${event != null}">
+        <p><strong>ID:</strong> <span th:text="${event.event_id()}"></span></p>
+        <p><strong>Title:</strong> <span th:text="${event.title()}"></span></p>
+        <p><strong>Description:</strong> <span th:text="${event.description()}"></span></p>
+        <!-- Format date as "25/07/2025" with fallback -->
+        <p><strong>Date:</strong> 
+            <span th:text="${event.date() != null ? #temporals.format(event.date(), 'dd/MM/yyyy') : 'N/A'}"></span>
+        </p>
+        
+        <!-- Fixed Start Time - format as "20/08/2025 at 09:00 AM" -->
+        <p><strong>Start Time:</strong> 
+            <span th:text="${#temporals.format(event.start_time(), 'dd/MM/yyyy')} + ' at ' + ${#temporals.format(event.start_time(), 'hh:mm a')}"></span>
+        </p>
+        
+        <!-- Finish Time - format as "22/08/2025 at 05:00 PM" with AM/PM -->
+        <p><strong>Finish Time:</strong> 
+            <span th:if="${#strings.contains(event.finish_time(), ' ')}"
+                  th:with="datePart=${#strings.substringBefore(event.finish_time(), ' ')},
+                           timePart=${#strings.substringAfter(event.finish_time(), ' ')},
+                           hourStr=${#strings.substring(timePart, 0, 2)},
+                           hour=${T(java.lang.Integer).parseInt(hourStr)},
+                           minute=${#strings.substring(timePart, 3, 5)},
+                           displayHour=${hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)},
+                           ampm=${hour >= 12 ? 'PM' : 'AM'}"
+                  th:text="${#strings.replace(datePart, '-', '/')} + ' at ' + ${displayHour} + ':' + ${minute} + ' ' + ${ampm}">
+            </span>
+            <span th:unless="${#strings.contains(event.finish_time(), ' ')}"
+                  th:text="${event.finish_time()}">
+            </span>
+        </p>
+        
+        <p><strong>Location:</strong> <span th:text="${event.location()}"></span></p>
+        <p><strong>Status:</strong> <span th:text="${event.status()}"></span></p>
+        <p><strong>Capacity:</strong> <span th:text="${event.capacity()}"></span></p>
+    </div>
+
+    <div class="back-links">
+        <a th:href="@{'/admin/events/' + ${event.event_id()} + '/edit'}" class="back-btn">Edit Event</a>
+        <a href="/admin/events" class="back-btn secondary">Back to All Events</a>
+    </div>
+
+</section>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="header">
+    <div class="left">
+        <a href="/">EventHub</a>
+        <a href="/browse">Browse Events</a>
+        <a href="/recommendation">Recommendations</a>
+        <a href="/my-bookings">My Bookings</a>
+        <a th:if="${session.role == 'ORGANISER' or session.role == 'ADMIN'}" href="/organiser/events">Organiser</a>
+        
+        <div th:if="${session.role == 'ADMIN'}" class="admin-dropdown">
+            <button class="admin-dropdown-btn">Admin &#9662;</button>
+            <div class="admin-dropdown-content">
+                <a th:href="@{/admin/users}">User Management</a>
+                <a th:href="@{/admin/events}">Event Management</a>
+            </div>
+        </div>
+
+        
+    </div>
+    <div class="right">
+        <div th:if="${authenticated}" class="right-nav">
+            <p>Welcome, <span th:text="${user_name}"></span>!</p>
+            <div th:replace="~{fragments/notification :: notification-panel}"></div>
+            <div class="dropdown">
+                <button class="login">Profile &#9662;</button>
+                <div class="dropdown-content">
+                    <a th:href="@{/users/edit}">Edit Profile</a>
+                    <a th:href="@{/users/logout}">Logout</a>
+                </div>
+            </div>
+        </div>
+        <div th:unless="${authenticated}">
+            <button class="signup" th:onclick="|location.href='@{/signup}'|">Sign Up</button>
+            <button class="login" th:onclick="|location.href='@{/login}'|">Login</button>
+        </div>
+    </div>
+</nav>
+</body>
+</html>

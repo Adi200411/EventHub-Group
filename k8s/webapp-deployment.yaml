@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  namespace: eventhub
+  labels:
+    app: webapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox:1.35
+        command: 
+        - sh
+        - -c
+        - |
+          echo "Waiting for MySQL to be ready..."
+          until nc -z mysql-service 3306; do
+            echo "MySQL not ready, sleeping..."
+            sleep 2
+          done
+          echo "MySQL is ready!"
+      containers:
+      - name: webapp
+        image: eventhub-webapp:latest
+        imagePullPolicy: Never  # For local development
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-service:3306/eventhub?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Australia/Melbourne"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "eventhub_user"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "password123"
+        - name: SPRING_FLYWAY_URL
+          value: "jdbc:mysql://mysql-service:3306/eventhub?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Australia/Melbourne"
+        - name: SPRING_FLYWAY_USER
+          value: "eventhub_user"
+        - name: SPRING_FLYWAY_PASSWORD
+          value: "password123"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "kubernetes"
+        ports:
+        - containerPort: 8080
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: webapp-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+  namespace: eventhub
+  labels:
+    app: webapp
+spec:
+  selector:
+    app: webapp
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  type: LoadBalancer  # Use NodePort for minikube

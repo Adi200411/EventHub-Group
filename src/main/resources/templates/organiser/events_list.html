@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Events • Organiser</title>
+  <link rel="stylesheet" th:href="@{/style.css}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+      .dropdown {
+          position: relative;
+          display: inline-block;
+      }
+
+      .dropdown-content {
+          display: none;
+          position: absolute;
+          background-color: #f9f9f9;
+          min-width: 160px;
+          box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+          z-index: 1;
+          right: 0;
+      }
+
+      .dropdown-content a {
+          color: black;
+          padding: 12px 16px;
+          text-decoration: none;
+          display: block;
+      }
+
+      .dropdown-content a:hover {background-color: #f1f1f1}
+
+      .dropdown:hover .dropdown-content {
+          display: block;
+      }
+      .right-nav {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+      }
+  </style>
+</head>
+<body>
+  <div th:replace="~{fragments/header :: header}"></div>
+
+<!-- ✅ MAIN CONTENT -->
+<section class="events">
+  <div class="container">
+
+    <h1>My Events</h1>
+
+    <!-- ✅ Search + Create toolbar -->
+    <div class="search-filter-bar" style="justify-content: space-between;">
+      <form th:action="@{/organiser/events}" method="get" style="display: flex; gap: 1rem; width: 100%;">
+        <input type="text" name="q" th:value="${q}" placeholder="Search title / description / location…" />
+        <input type="hidden" name="page" value="0" />
+        <input type="hidden" name="size" th:value="${size}" />
+        <button type="submit">Search</button>
+        <a th:href="@{/organiser/events/new}" class="back-btn">+ Create Event</a>
+      </form>
+    </div>
+
+    <!-- ✅ Flash messages -->
+    <div th:if="${param.created}" class="message success-message">Event created successfully.</div>
+    <div th:if="${param.updated}" class="message success-message">Event updated successfully.</div>
+    <div th:if="${param.cancelled}" class="message error-message">Event cancelled.</div>
+
+    <!-- ✅ No events -->
+    <div th:if="${events == null or events.content.size() == 0}" class="no-feedback">
+      <p th:if="${#strings.isEmpty(q)}">No upcoming events yet. Create your first one!</p>
+      <p th:unless="${#strings.isEmpty(q)}">
+        No results for "<b th:text="${q}">q</b>". Try a different search.
+      </p>
+    </div>
+
+    <!-- ✅ Events grid -->
+    <div th:if="${events != null and events.content.size() > 0}" class="event-grid">
+      <div class="event-card-browse" th:each="ev : ${events.content}">
+        <h3 th:text="${ev.title}">Event Title</h3>
+        <p><strong>Date:</strong> <span th:text="${ev.date != null ? #temporals.format(ev.date, 'EEE d MMM yyyy') : 'TBA'}"></span></p>
+        <p><strong>Time:</strong>
+          <span th:text="${ev.start_time != null ? #temporals.format(ev.start_time, 'h:mm a') : 'TBA'}"></span>
+          -
+          <span th:text="${ev.finish_time != null ? ev.finish_time : 'TBA'}"></span>
+        </p>
+        <p><strong>Status:</strong>
+          <span class="badge" th:classappend="' status-' + ${ev.status}" th:text="${ev.status}">ACTIVE</span>
+        </p>
+        <p><strong>Capacity:</strong> <span th:text="${ev.capacity}">100</span></p>
+
+        <div class="back-links">
+          <a th:href="@{'/organiser/events/' + ${ev.event_id} + '/edit'}" class="back-btn">Edit</a>
+          <form th:action="@{'/organiser/events/' + ${ev.event_id} + '/cancel'}"
+                method="post"
+                th:if="${ev.status != 'CANCELLED'}"
+                onsubmit="return confirm('Cancel this event? This is a soft cancel and can be re-activated later.');">
+            <button type="submit" class="back-btn secondary">Cancel</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ Pagination -->
+    <div th:if="${events != null and events.totalPages > 1}" class="pagination">
+      <a th:if="${!events.first}"
+         th:href="@{/organiser/events(page=${events.number - 1}, size=${size}, q=${q})}">&laquo; Prev</a>
+
+      <span th:each="p : ${#numbers.sequence(0, events.totalPages - 1)}"
+            th:classappend="${p} == ${events.number} ? 'active'">
+        <a th:if="${p} != ${events.number}"
+           th:text="${p + 1}"
+           th:href="@{/organiser/events(page=${p}, size=${size}, q=${q})}">1</a>
+        <span th:if="${p} == ${events.number}" th:text="${p + 1}">1</span>
+      </span>
+
+      <a th:if="${!events.last}"
+         th:href="@{/organiser/events(page=${events.number + 1}, size=${size}, q=${q})}">Next &raquo;</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ✅ FOOTER -->
+<footer>
+  <div class="footer-content">
+    <div class="footer-section">
+      <h3>EventHub</h3>
+      <p>Connecting students with amazing events and opportunities.</p>
+    </div>
+    <div class="footer-section">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="#about">About</a></li>
+        <li><a href="#events">Events</a></li>
+      </ul>
+    </div>
+    <div class="footer-section">
+      <h4>Contact</h4>
+      <ul>
+        <li>Email: example@example.com</li>
+        <li>Phone: 123 456 789</li>
+        <li>Location: RMIT University</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2025 EventHub. All rights reserved.</p>
+  </div>
+</footer>
+
+  <div th:replace="~{fragments/notification :: notification-script}"></div>
+</body>
+</html>

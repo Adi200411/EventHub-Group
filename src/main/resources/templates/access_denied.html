@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Access Denied | EventHub</title>
+    <link rel="stylesheet" th:href="@{/style.css}" />
+    <style>
+        .access-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .access-container h1 {
+            font-size: 2rem;
+            color: #c0392b;
+            margin-bottom: 1rem;
+        }
+
+        .access-container p {
+            color: #555;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .access-container a {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .access-container a:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<!--  Page Content -->
+<section class="access-container">
+    <h1>🚫 Access Denied</h1>
+    <p>You don’t have permission to view this page.<br>
+       Please check your account role or contact an administrator.</p>
+
+    <a th:href="@{/}">Back to Home</a>
+</section>
+
+</body>
+</html>

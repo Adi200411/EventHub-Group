@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Check-in Result</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <style>
+        .status-card {
+            max-width: 600px;
+            margin: 4rem auto;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .status-icon {
+            font-size: 4rem;
+        }
+        .status-card.success {
+            background-color: #d4edda;
+            border-left: 5px solid #28a745;
+        }
+        .status-card.failure {
+            background-color: #f8d7da;
+            border-left: 5px solid #dc3545;
+        }
+        .event-details {
+            margin-top: 1.5rem;
+            text-align: left;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<div th:classappend="${success} ? 'success' : 'failure'" class="container status-card">
+    <div th:if="${success}">
+        <div class="status-icon">✅</div>
+        <h1>Check-in Successful!</h1>
+        <p>Welcome, <strong th:text="${user.email}"></strong>!</p>
+    </div>
+    <div th:unless="${success}">
+        <div class="status-icon">❌</div>
+        <h1 th:text="${message}"></h1>
+    </div>
+
+    <div th:if="${event}" class="event-details">
+        <h3>Event Details</h3>
+        <p><strong>Event:</strong> <span th:text="${event.title}"></span></p>
+        <p><strong>Date:</strong> <span th:text="${event.date}"></span></p>
+        <p><strong>Location:</strong> <span th:text="${event.location}"></span></p>
+    </div>
+
+    <a href="/" style="display: inline-block; margin-top: 2rem;">Go to Home</a>
+</div>
+</body>
+</html>

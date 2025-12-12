@@ -1,0 +1,70 @@
+name: eventhub-test
+
+services:
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: eventhub-test-runner
+    volumes:
+      - .:/app
+      - maven_cache:/root/.m2
+    working_dir: /app
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/eventhub_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Australia/Melbourne
+      - SPRING_DATASOURCE_USERNAME=eventhub_user
+      - SPRING_DATASOURCE_PASSWORD=password123
+      - SPRING_FLYWAY_URL=jdbc:mysql://mysql:3306/eventhub_test?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Australia/Melbourne
+      - SPRING_FLYWAY_USER=eventhub_user
+      - SPRING_FLYWAY_PASSWORD=password123
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - test-network
+    command: 
+      - bash
+      - -c
+      - |
+        echo 'Waiting for MySQL to be ready...'
+        while ! mysqladmin ping -h mysql -u eventhub_user -ppassword123 --silent; do
+          echo 'Waiting for MySQL...'
+          sleep 2
+        done
+        echo 'MySQL is ready!'
+        # Skip acceptance tests in act environment (they need Docker-in-Docker)
+        if [ "$ACT" = "true" ]; then
+          echo 'Running in act environment - skipping Testcontainers tests'
+          ./mvnw test -Pci -Dtest='!**/*AcceptanceTests'
+        else
+          echo 'Running all tests including acceptance tests'
+          ./mvnw test -Pci
+        fi
+
+  mysql:
+    image: mysql:8.0
+    container_name: eventhub-mysql-test
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: eventhub_test
+      MYSQL_USER: eventhub_user
+      MYSQL_PASSWORD: password123
+    ports:
+      - "3308:3306"
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "eventhub_user", "-ppassword123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - mysql_test_data:/var/lib/mysql
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  mysql_test_data:
+  maven_cache:
