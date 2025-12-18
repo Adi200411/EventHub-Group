@@ -4,12 +4,12 @@
 # Group Information
 
 ## Members
-* xxxx
-* xxxx
-* xxxx
-* xxxx
-* Aditya Gandi
-* xxxx
+* Aditya Gandi 
+* Mohammad Azhar Khalid 
+* Patrick Hannan 
+* Diego Espinel Hernandez 
+* Ishandeep Singh 
+* Ben Hodder
 
 # How to run the application
 
